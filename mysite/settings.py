@@ -120,8 +120,48 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# API设置
+BASE_URL = os.environ.get('BASE_URL')
+
 # 指定用户类
 AUTH_USER_MODEL = 'account.UserProfileModel'
 
 # 指定media根路径
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = BASE_URL + '/media/'
+
+
+# 自定义响应数据格式
+class Rest:
+    def __init__(self):
+        self.code = 0
+        self.msg = ''
+        self.data = None
+
+    def set(self, code=0, msg='', data=None):
+        self.code = code
+        self.msg = msg
+        self.data = data
+
+
+# rest_framework全局配置
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+
+}
+
+# redis缓存
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://106.54.116.188:6379/2',
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "boysdqzymm5419",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+            "DECODE_RESPONSES":True,
+            "SOCKET_CONNECT_TIMEOUT": 5,  # in seconds
+            "SOCKET_TIMEOUT": 5,  # in seconds
+        },
+    },
+}

@@ -1,4 +1,3 @@
-import time
 from functools import wraps
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, User, PermissionsMixin
@@ -21,6 +20,7 @@ class UnicodeUsernameValidator(validators.RegexValidator):
     message = '6-30个字符，必须使用字母、数字和下划线的组合，不能以数字或下划线开头'
 
 
+# 密码校验器
 @deconstructible
 class UnicodePasswordValidator(validators.RegexValidator):
     regex = r'^(?!_)(?!_+$)[a-zA-Z0-9_]{6,}$'
@@ -45,7 +45,7 @@ class UserManager(BaseUserManager):
     def _create_user(self, password, **extra_fields):
         user = self.model(**extra_fields)
         user.nickname = user.nickname or f'{user.mobile[:3]}******{user.mobile[-2:]}'
-        user.last_login_time = str(int(time.time()))
+        # user.last_login_time = str(int(time.time()))
         user.set_password(password)
         user.save(using=self._db)
 
@@ -87,6 +87,7 @@ class UserProfileModel(AbstractBaseUser, PermissionsMixin):
         '密码', error_messages={'max_length': '密码最多128位'}, max_length=128, blank=True, null=True,
         validators=[password_validator], help_text='本站用户登录使用的密码,三方平台账号登录时无需使用密码'
     )
+    app_key = models.CharField('用户身份key', max_length=64, unique=True, blank=True, help_text='本站用户注册后拥有,唯一身份标识')
     nickname = models.CharField('昵称', max_length=30, default='', help_text='昵称')
     type_choices = ((0, '管理员'), (1, '普通用户'), (2, 'vip用户'),)
     type = models.IntegerField('用户类型', choices=type_choices, default=1)
@@ -99,7 +100,7 @@ class UserProfileModel(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField('是否激活', default=True,
                                     help_text='默认激活,当要删除用户时,可以改成False')
     created_time = models.DateTimeField('注册时间', auto_now_add=True)
-    last_login_time = models.CharField('最近登录时间', max_length=10, help_text='最近登录时间', blank=True, null=True)
+    # last_login_time = models.CharField('最近登录时间', max_length=10, help_text='最近登录时间', blank=True, null=True)
 
     @decorate_save
     def save(self, *args, **kwargs):
@@ -133,6 +134,7 @@ class UserAuthModel(models.Model):
         '认证标识', max_length=128, unique=True,
         help_text='用户登录的标识,如手机号密码登录,则存储手机号,三方平台登录,则存储open_id'
     )
+    is_valid = models.BooleanField('是否激活', blank=True, null=True, help_text='当邮箱密码认证时需要激活')
     password = models.CharField(
         '密码', error_messages={'max_length': '密码最多128位'}, max_length=128, blank=True, null=True,
         help_text='本站用户登录使用的密码,三方平台账号登录时无需使用密码'

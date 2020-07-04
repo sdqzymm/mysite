@@ -22,7 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # 账号相关路由配置
-    re_path('^account/$', include(('account.urls', 'account'), namespace='account')),
+    re_path('^account/', include(('account.urls', 'account'), namespace='account')),
 
     # media路径配置
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT}),
