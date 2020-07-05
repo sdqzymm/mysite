@@ -136,12 +136,13 @@ class Rest:
     def __init__(self):
         self.code = 0
         self.msg = ''
-        self.data = None
+        self.data = {}
 
     def set(self, code=0, msg='', data=None):
         self.code = code
         self.msg = msg
-        self.data = data
+        if data is not None:
+            self.data = data
 
 
 # rest_framework全局配置

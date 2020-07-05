@@ -1,7 +1,6 @@
 import time
 from django.db import transaction
 from django.core.cache import cache
-from django.contrib.auth.hashers import check_password, make_password
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import UserProfileSerializer
@@ -177,10 +176,11 @@ class RefreshTokenView(APIView):
             if not token:
                 rest.set(10403, '用户token不存在')
                 return Response(rest.__dict__)
-
+            print(refresh_token)
+            print(token.get('refresh_token'))
             try:
                 if refresh_token != token.get('refresh_token'):
-                    if refresh_token == old_token.get('refresh_token'):
+                    if old_token and refresh_token == old_token.get('refresh_token'):
                         raise OldRefreshTokenException
                     rest.set(10404, '参数错误, refresh_token有误')
                     return Response(rest.__dict__)

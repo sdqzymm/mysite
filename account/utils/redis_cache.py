@@ -27,7 +27,7 @@ def set_refresh_token(access_token, refresh_token, app_key):
     """
     if not cache.get(f'{app_key}_old'):
         old_token = cache.get(app_key)
-        cache.set(f'{app_key}_old', old_token, timeout=10)
+        cache.set(f'{app_key}_old', old_token, timeout=30)
     token = cache.get(f'{app_key}_refresh')
     if not token:
         token = {
@@ -36,6 +36,11 @@ def set_refresh_token(access_token, refresh_token, app_key):
             'refresh_token': refresh_token,
             'refresh_expire': int(time.time()) + 3600 * 24 * 15
         }
-        cache.set(f'{app_key}_refresh', timeout=10)
+        cache.set(f'{app_key}_refresh', token, timeout=10)
+    else:
+        access_token = token.get('access_token')
+        refresh_token = token.get('refresh_token')
     cache.set(app_key, token, timeout=None)
+    return access_token, refresh_token
+
 
