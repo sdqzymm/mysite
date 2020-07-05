@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '^#9k7h_x+#*@l-9q!*)-)fn)e4l*+7%_c!fiz2)0rz&fc1ev65'
+SECRET_KEY = os.environ.get('MYSITE_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -130,24 +131,50 @@ AUTH_USER_MODEL = 'account.UserProfileModel'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = BASE_URL + '/media/'
 
+
+class Rest:
+    def __init__(self):
+        self.code = 0
+        self.msg = ''
+        self.data = None
+
+    def set(self, code=0, msg='', data=None):
+        self.code = code
+        self.msg = msg
+        self.data = data
+
+
 # rest_framework全局配置
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
-
+    # 版本组件
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'ALLOWED_VERSIONS': None,  # 允许的版本,None表示所有
+    'VERSION_PARAM': 'version',  # 版本参数
+    # 认证组件
+    'DEFAULT_AUTHENTICATION_CLASSES': ['account.utils.auth.MyAuth'],
+    # 权限组件
+    'DEFAULT_PERMISSION_CLASSES': [ ],
+    # 频率组件
+    # 'DEFAULT_THROTTLE_CLASSES': ['utils.throttle.MyThrottle'],
+    # 'DEFAULT_THROTTLE_RATES': {  # 默认频率
+    #     'rate': '15/m'    # scope
+    # }
 }
+
 
 # redis缓存
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://106.54.116.188:6379/2',
+        'LOCATION': f'redis://{os.environ.get("TENCENT_YUN_IP")}:6379/2',
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "PASSWORD": "boysdqzymm5419",
+            "PASSWORD": os.environ.get('PASSWORD'),
             "CONNECTION_POOL_KWARGS": {"max_connections": 100},
             "DECODE_RESPONSES":True,
-            "SOCKET_CONNECT_TIMEOUT": 5,  # in seconds
-            "SOCKET_TIMEOUT": 5,  # in seconds
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
         },
     },
 }

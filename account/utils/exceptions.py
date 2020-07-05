@@ -1,5 +1,5 @@
 class RollBackException(Exception):
-    # 在原子事务中抛出该错误, 表示要求数据库进行回滚
+    # 注册视图中抛出该错误, 表示创建用户失败, 数据库回滚
     pass
 
 

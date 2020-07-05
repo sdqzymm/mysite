@@ -1,3 +1,5 @@
+from mysite.settings import MEDIA_URL, Rest
+
 AUTH_TYPE = [
     0,  # 手机号密码登录,
     1,  # 用户名密码登录
@@ -9,13 +11,4 @@ AUTH_TYPE = [
 ]
 
 
-class Rest:
-    def __init__(self):
-        self.code = 0
-        self.msg = ''
-        self.data = None
 
-    def set(self, code=0, msg='', data=None):
-        self.code = code
-        self.msg = msg
-        self.data = data

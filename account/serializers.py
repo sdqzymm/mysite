@@ -1,8 +1,8 @@
+from hashlib import md5
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import UserProfileModel, UserDetailModel, UserAuthModel
-from mysite.settings import MEDIA_URL
-from hashlib import md5
+from .models import UserProfileModel
+from .settings import MEDIA_URL
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

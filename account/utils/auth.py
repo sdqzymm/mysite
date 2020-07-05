@@ -1,10 +1,9 @@
 import time
+from django.core.cache import cache
 from rest_framework.authentication import TokenAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
-from account.models import UserProfileModel
-from mysite.settings import Rest
-from django.core.cache import cache
-from account.settings import AUTH_TYPE
+from ..models import UserProfileModel
+from ..settings import Rest, AUTH_TYPE
 
 
 class MyAuth(TokenAuthentication):
@@ -23,20 +22,19 @@ class MyAuth(TokenAuthentication):
         # 请求头中-> Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a  取到Token xxx
         try:
             auth = get_authorization_header(request).split()
-
             if not auth:
                 rest.set(10201, '请求头未携带token令牌')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
 
             if len(auth) != 2 or auth[0].lower() != self.keyword.lower().encode():
                 rest.set(10202, '无效的token令牌，请求头携带token格式不正确')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
 
             try:
                 token = auth[1].decode()
             except UnicodeError:
                 rest.set(10203, '无效的token值，token中含有无效的字符')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
 
             auth_type = int(request.data.get('auth_type', -1))
             self.app_key = request.data.get('app_key', '')
@@ -44,12 +42,15 @@ class MyAuth(TokenAuthentication):
 
             if auth_type not in AUTH_TYPE:
                 rest.set(10204, '参数错误, auth_type有误')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
             if auth_type not in [0, 1, 2]:  # 判定是否本站注册用户
                 self.is_my_user = False
 
             return self.authenticate_credentials(token)
-        except Exception:
+
+        except Exception as e:
+            if type(e) == AuthenticationFailed:
+                raise AuthenticationFailed(rest.__dict__)
             rest.set(10299, '未知错误')
             raise AuthenticationFailed(rest.__dict__)
 
@@ -61,10 +62,10 @@ class MyAuth(TokenAuthentication):
             user_obj = UserProfileModel.objects.filter(app_key=self.app_key).first()
             if not user_obj:
                 rest.set(10205, '参数错误,app_key不存在')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
             if not user_obj.is_active:
                 rest.set(10221, '用户被冻结')
-                raise AuthenticationFailed(rest.__dict__)
+                raise AuthenticationFailed
             # 校验token
             self.check_token(key, rest)
         else:
@@ -77,16 +78,16 @@ class MyAuth(TokenAuthentication):
         token = cache.get(self.app_key or self.open_id)
         if not token:
             rest.set(10206, 'token不存在')
-            raise AuthenticationFailed(rest.__dict__)
+            raise AuthenticationFailed
         if key != token.get('access_token', ''):
             rest.set(10207, 'token不匹配')
-            raise AuthenticationFailed(rest.__dict__)
+            raise AuthenticationFailed
         elif token.get('access_expire', 0) < time.time():
             rest.set(10231, 'token超时,请刷新token')
             rest.data['redirect_url'] = self.redirect_url
             if self.open_id:
                 rest.set(10232, '三方平台账号token超时,请重新登录')
-            raise AuthenticationFailed(rest.__dict__)
+            raise AuthenticationFailed
 
 
 

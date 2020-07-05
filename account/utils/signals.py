@@ -8,9 +8,10 @@ token_refreshed = Signal(providing_args=['key'])
 
 
 def auto_login(sender, auth_type, key, **kwargs):
+    # 登录成功, 本站注册用户缓存token, 刷新登录时间, 并且返回用户信息 三方账号仅缓存token
     access_token = uuid4()
     refresh_token = uuid4()
-    if auth_type in [1, 2, 3]:
+    if auth_type == 9:
         set_user_token(access_token, refresh_token, key)
     else:
         set_others_token(access_token, key)

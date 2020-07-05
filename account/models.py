@@ -1,7 +1,6 @@
 from functools import wraps
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, User, PermissionsMixin
-from django.core.mail import send_mail
 from django.core import validators
 from django.utils.deconstruct import deconstructible
 
@@ -27,7 +26,7 @@ class UnicodePasswordValidator(validators.RegexValidator):
     message = '至少6个字符，可以使用字母、数字或下划线，不能以下划线开头，不能全部是下划线'
 
 
-# 给用户表save方法自定义装饰器
+# 给用户表save方法自定义装饰器, save后自从生成手机号密码认证表并绑定用户
 def decorate_save(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -45,7 +44,6 @@ class UserManager(BaseUserManager):
     def _create_user(self, password, **extra_fields):
         user = self.model(**extra_fields)
         user.nickname = user.nickname or f'{user.mobile[:3]}******{user.mobile[-2:]}'
-        # user.last_login_time = str(int(time.time()))
         user.set_password(password)
         user.save(using=self._db)
 
@@ -100,7 +98,6 @@ class UserProfileModel(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField('是否激活', default=True,
                                     help_text='默认激活,当要删除用户时,可以改成False')
     created_time = models.DateTimeField('注册时间', auto_now_add=True)
-    # last_login_time = models.CharField('最近登录时间', max_length=10, help_text='最近登录时间', blank=True, null=True)
 
     @decorate_save
     def save(self, *args, **kwargs):
