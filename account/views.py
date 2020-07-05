@@ -1,34 +1,39 @@
+import time
 from django.db import transaction
+from django.core.cache import cache
 from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import UserProfileSerializer
-from .models import UserAuthModel
-from .utils.signals import logged_in
-from mysite.settings import Rest
+from .models import UserAuthModel, UserProfileModel
+from .utils.signals import logged_in, token_refreshed
+from .settings import Rest
 from .settings import AUTH_TYPE
-from utils.exceptions import RollBackException
+from .utils.exceptions import RollBackException, OldRefreshTokenException
 
 
 class RegView(APIView):
+    authentication_classes = []
+
     def post(self, request):
         rest = Rest()
         try:
             # TODO: 首先短信验证码校验
+            auth_type = int(request.data.get('auth_type', -1))
+            if auth_type not in AUTH_TYPE:
+                rest.set(10002, '注册失败,注册类型不存在')
+                return Response(rest.__dict__)
+            if auth_type in [0, 1, 2]:
+                rest.set(1003, '注册失败,本站暂不支持仅用密码注册')
+                return Response(rest.__dict__)
             # 创建用户
             ser_obj = UserProfileSerializer(data=request.data)
-
             if not ser_obj.is_valid():
                 rest.set(10001, '注册失败,数据校验错误', ser_obj.errors)
                 return Response(rest.__dict__)
             user_obj = ser_obj.save()
 
-            auth_type = int(request.data.get('auth_type', -1))
-            if auth_type not in AUTH_TYPE:
-                rest.set(10002, '注册失败,注册类型不存在')
-                return Response(rest.__dict__)
-
-            elif auth_type != 9:
+            if auth_type != 9:
                 # 三方平台账号绑定注册
                 open_id = request.data.get('open_id')
                 try:
@@ -44,19 +49,20 @@ class RegView(APIView):
                     return Response(rest.__dict__)
 
             # 自动登录, 缓存token, 修改登录时间
-            access_token, refresh_token = logged_in.send(sender=user_obj, auth_type=auth_type, key=user_obj.app_key)
-
+            access_token, refresh_token = logged_in.send(sender=user_obj, auth_type=auth_type, key=user_obj.app_key)[0][1]
             rest.set(10000, '注册成功', ser_obj.data)
             rest.data['access_token'] = access_token
             rest.data['refresh_token'] = refresh_token
 
-        except Exception:
-            rest.set(10099, '未知错误')
+        except Exception as e:
+            rest.set(10099, str(e))
 
         return Response(rest.__dict__)
 
 
 class LoginView(APIView):
+    authentication_classes = []
+
     def post(self, request):
         rest = Rest()
         try:
@@ -78,12 +84,12 @@ class LoginView(APIView):
 
             # 本站注册用户登录
             rest, user_obj = self.user_auth(request, auth_type, rest)
-            access_token, refresh_token = logged_in.send(sender=user_obj, auth_type=auth_type, key=user_obj.app_key)
+            access_token, refresh_token = logged_in.send(sender=user_obj, auth_type=auth_type, key=user_obj.app_key)[0][1]
             rest.data['access_token'] = access_token
             rest.data['refresh_token'] = refresh_token
 
-        except Exception:
-            rest.set(10199, '未知错误')
+        except Exception as e:
+            rest.set(10199, str(e))
 
         return Response(rest.__dict__)
 
@@ -132,5 +138,54 @@ class LoginView(APIView):
 
 
 class RefreshTokenView(APIView):
+    authentication_classes = []
+
     def post(self, request):
-        pass
+        rest = Rest()
+        try:
+            app_key = request.data.get('app_key', '')
+            refresh_token = request.data.get('refresh_token', '')
+
+            if not (app_key and refresh_token):
+                rest.set(10401, '参数错误, 未携带app_key或refresh_token')
+                return Response(rest.__dict__)
+
+            user_obj = UserProfileModel.objects.filter(app_key=app_key).first()
+            if not user_obj:
+                rest.set(10402, '参数错误, app_key用户不存在')
+                return Response(rest.__dict__)
+
+            token = cache.get(app_key)
+            old_token = cache.get(f'{app_key}_old')
+
+            if not token:
+                rest.set(10403, '用户token不存在')
+                return Response(rest.__dict__)
+
+            try:
+                if refresh_token != token.get('refresh_token'):
+                    if refresh_token == old_token.get('refresh_token'):
+                        raise OldRefreshTokenException
+                    rest.set(10404, '参数错误, refresh_token有误')
+                    return Response(rest.__dict__)
+                expire = token.get('refresh_expire', 0)
+                if expire <= time.time():
+                    rest.set(10405, 'refresh_token已过期, 请重新登录')
+                    return Response(rest.__dict__)
+            except OldRefreshTokenException:
+                pass
+
+            # 刷新token
+            access_token, refresh_token = token_refreshed.send(sender=user_obj, key=app_key)[0][1]
+            redirect_url = request.data.get('redirect_url')
+            rest.set(10400, '已刷新token,请跳转url')
+            rest.data['redirect_url'] = request.data.get('redirect_url')
+            if not redirect_url:
+                rest.set(10400, '已刷新token,跳转首页')
+            rest.data['access_token'] = access_token
+            rest.data['refresh_token'] = refresh_token
+
+        except Exception as e:
+            rest.set(10499, str(e))
+
+        return Response(rest.__dict__)

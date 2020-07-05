@@ -7,3 +7,15 @@ AUTH_TYPE = [
     5,  # 微博账号登录,注册
     9,  # 手机短信验证码注册
 ]
+
+
+class Rest:
+    def __init__(self):
+        self.code = 0
+        self.msg = ''
+        self.data = None
+
+    def set(self, code=0, msg='', data=None):
+        self.code = code
+        self.msg = msg
+        self.data = data

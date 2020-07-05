@@ -130,20 +130,6 @@ AUTH_USER_MODEL = 'account.UserProfileModel'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = BASE_URL + '/media/'
 
-
-# 自定义响应数据格式
-class Rest:
-    def __init__(self):
-        self.code = 0
-        self.msg = ''
-        self.data = None
-
-    def set(self, code=0, msg='', data=None):
-        self.code = code
-        self.msg = msg
-        self.data = data
-
-
 # rest_framework全局配置
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],

@@ -15,6 +15,27 @@ def set_user_token(access_token, refresh_token, app_key):
 def set_others_token(access_token, open_id):
     token = {
         'access_token': access_token,
-        'access_expire': int(time.time()) + 3600 * 24,  # 每24小时要重新登录
+        'access_expire': int(time.time()) + 3600 * 24,  # 三方平台账号每24小时要重新登录, 前
     }
-    cache.set(open_id, token, timeout=3600*24*7)
+    cache.set(open_id, token, timeout=3600*25)  # 失效后及时过期
+
+
+def set_refresh_token(access_token, refresh_token, app_key):
+    """
+    保存旧的token, 客户端并发请求可能拿着旧的refresh_token来刷新
+    10s内生成同一个token,避免客户端并发请求获取到不同的刷新token值
+    """
+    if not cache.get(f'{app_key}_old'):
+        old_token = cache.get(app_key)
+        cache.set(f'{app_key}_old', old_token, timeout=10)
+    token = cache.get(f'{app_key}_refresh')
+    if not token:
+        token = {
+            'access_token': access_token,
+            'access_expire': int(time.time()) + 7200,
+            'refresh_token': refresh_token,
+            'refresh_expire': int(time.time()) + 3600 * 24 * 15
+        }
+        cache.set(f'{app_key}_refresh', timeout=10)
+    cache.set(app_key, token, timeout=None)
+

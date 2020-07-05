@@ -12,11 +12,12 @@ class MyAuth(TokenAuthentication):
     is_my_user = True
     app_key = None
     open_id = None
+    redirect_url = None
 
     def authenticate(self, request):
         # 10201-10219, 跳转登录页面 10299: 服务器错误,报警 跳转登录
         # 10221表示账号被冻结, 前台提示用户后跳转解封或登录页面
-        # 10231表示access_token过期,前台跳转刷新token
+        # 10231表示本站用户access_token过期,前台跳转刷新token
         # 10232表示三方平台账号使用超过24小时,前台跳转重新登录
         rest = Rest()
         # 请求头中-> Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a  取到Token xxx
@@ -39,6 +40,7 @@ class MyAuth(TokenAuthentication):
 
             auth_type = int(request.data.get('auth_type', -1))
             self.app_key = request.data.get('app_key', '')
+            self.redirect_url = request.get_full_path()
 
             if auth_type not in AUTH_TYPE:
                 rest.set(10204, '参数错误, auth_type有误')
@@ -81,6 +83,7 @@ class MyAuth(TokenAuthentication):
             raise AuthenticationFailed(rest.__dict__)
         elif token.get('access_expire', 0) < time.time():
             rest.set(10231, 'token超时,请刷新token')
+            rest.data['redirect_url'] = self.redirect_url
             if self.open_id:
                 rest.set(10232, '三方平台账号token超时,请重新登录')
             raise AuthenticationFailed(rest.__dict__)
