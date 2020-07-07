@@ -47,7 +47,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 }
             },
             'created_time': {'read_only': True},
-            'login_time': {'read_only': True},
+            'last_login': {'read_only': True},
             'type': {'write_only': True},
             'gender': {'write_only': True},
             'avatar': {'write_only': True},

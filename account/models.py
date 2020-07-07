@@ -131,19 +131,19 @@ class UserAuthModel(models.Model):
         '认证标识', max_length=128, unique=True,
         help_text='用户登录的标识,如手机号密码登录,则存储手机号,三方平台登录,则存储open_id'
     )
-    is_valid = models.BooleanField('是否激活', blank=True, null=True, help_text='当邮箱密码认证时需要激活')
+    is_valid = models.BooleanField('是否激活', blank=True, null=True, help_text='绑定邮箱时需要激活')
     password = models.CharField(
         '密码', error_messages={'max_length': '密码最多128位'}, max_length=128, blank=True, null=True,
         help_text='本站用户登录使用的密码,三方平台账号登录时无需使用密码'
     )
 
     def __str__(self):
-        return f'<用户授权信息: {self.user}--{self.get_type_display()}>'
+        return f'<用户认证信息: {self.user}--{self.get_type_display()}>'
 
     __repr__ = __str__
 
     class Meta:
-        verbose_name = '用户授权表'
+        verbose_name = '用户认证表'
         verbose_name_plural = verbose_name
 
 

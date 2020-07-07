@@ -11,12 +11,13 @@ def auto_login(sender, auth_type, key, **kwargs):
     # 登录成功, 本站注册用户缓存token, 刷新登录时间, 并且返回用户信息 三方账号仅缓存token
     access_token = str(uuid4())
     refresh_token = str(uuid4())
-    if auth_type == 9:
+    if auth_type in [0, 1, 2, 9]:
         set_user_token(access_token, refresh_token, key)
     else:
         set_others_token(access_token, key)
     if sender:
         sender.last_login = timezone.now()
+        sender.save()
         return access_token, refresh_token
 
 

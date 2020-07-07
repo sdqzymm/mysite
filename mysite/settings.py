@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('MYSITE_SECRET_KEY')
+SECRET_KEY = os.environ['MYSITE_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -122,7 +122,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # API设置
-BASE_URL = os.environ.get('BASE_URL')
+BASE_URL = os.environ['BASE_URL']
 
 # 指定用户类
 AUTH_USER_MODEL = 'account.UserProfileModel'
@@ -150,17 +150,17 @@ REST_FRAMEWORK = {
     # 版本组件
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
-    'ALLOWED_VERSIONS': None,  # 允许的版本,None表示所有
+    'ALLOWED_VERSIONS': None,  # None表示所有所有版本
     'VERSION_PARAM': 'version',  # 版本参数
     # 认证组件
     'DEFAULT_AUTHENTICATION_CLASSES': ['account.utils.auth.MyAuth'],
     # 权限组件
-    'DEFAULT_PERMISSION_CLASSES': [ ],
+    'DEFAULT_PERMISSION_CLASSES': [],
     # 频率组件
-    # 'DEFAULT_THROTTLE_CLASSES': ['utils.throttle.MyThrottle'],
-    # 'DEFAULT_THROTTLE_RATES': {  # 默认频率
-    #     'rate': '15/m'    # scope
-    # }
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {  # 默认频率
+        'rate': '15/m'    # scope
+    }
 }
 
 
@@ -168,10 +168,10 @@ REST_FRAMEWORK = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f'redis://{os.environ.get("TENCENT_YUN_IP")}:6379/2',
+        'LOCATION': f'redis://{os.environ["TENCENT_YUN_IP"]}:6379/2',
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "PASSWORD": os.environ.get('PASSWORD'),
+            "PASSWORD": os.environ['PASSWORD'],
             "CONNECTION_POOL_KWARGS": {"max_connections": 100},
             "DECODE_RESPONSES":True,
             "SOCKET_CONNECT_TIMEOUT": 5,
@@ -179,3 +179,12 @@ CACHES = {
         },
     },
 }
+
+# 邮箱配置
+EMAIL_HOST = 'smtp.qq.com'  # QQ邮箱服务
+EMAIL_PORT = 25  # 端口,看具体云服务商,阿里云要改465
+EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER'] # 邮箱账号
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD'] # 邮箱授权码
+EMAIL_USE_TLS = True
+EMAIL_FROM = '幻云风' # 对方看到的名称(没有鸟用啊..)
+

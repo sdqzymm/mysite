@@ -7,4 +7,6 @@ urlpatterns = [
     re_path('^login/$', LoginView.as_view(), name='login'),
     re_path('^refresh_token/$', RefreshTokenView.as_view(), name='refresh_token'),
     re_path('^test/$', TestView.as_view(), name='test_view'),
+    re_path('^blind/$', BlindView.as_view(), name='blind'),
+    re_path('^active/$', ActiveView.as_view(), name='active'),
 ]

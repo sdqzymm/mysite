@@ -1,13 +1,14 @@
 import time
+import smtplib
 from django.db import transaction
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from .settings import Rest, AUTH_TYPE
 from .serializers import UserProfileSerializer
 from .models import UserAuthModel, UserProfileModel
+from .utils.email import send_active_email
 from .utils.signals import logged_in, token_refreshed
-from .settings import Rest
-from .settings import AUTH_TYPE
 from .utils.exceptions import RollBackException, OldRefreshTokenException
 
 
@@ -17,9 +18,9 @@ class RegView(APIView):
     def post(self, request, *args, **kwargs):
         rest = Rest()
         try:
-            # TODO: 首先短信验证码校验
+            # TODO: 首先短信验证码校验, 需要公司账号对接通信平台, 后续自己注册个公司添加
             auth_type = int(request.data.get('auth_type') or -1)
-            if auth_type not in AUTH_TYPE:
+            if auth_type not in AUTH_TYPE.keys():
                 rest.set(10002, '注册失败,注册类型不存在')
                 return Response(rest.__dict__)
             if auth_type in [0, 1, 2]:
@@ -69,7 +70,7 @@ class LoginView(APIView):
         rest = Rest()
         try:
             auth_type = int(request.data.get('auth_type') or -1)
-            if auth_type not in AUTH_TYPE:
+            if auth_type not in AUTH_TYPE.keys() or auth_type == 9:
                 rest.set(10101, '参数错误,type未提供或有误')
                 return Response(rest.__dict__)
 
@@ -176,8 +177,6 @@ class RefreshTokenView(APIView):
             if not token:
                 rest.set(10403, '用户token不存在')
                 return Response(rest.__dict__)
-            print(refresh_token)
-            print(token.get('refresh_token'))
             try:
                 if refresh_token != token.get('refresh_token'):
                     if old_token and refresh_token == old_token.get('refresh_token'):
@@ -207,6 +206,117 @@ class RefreshTokenView(APIView):
         return Response(rest.__dict__)
 
 
+class BlindView(APIView):  # 绑定其实就是添加一种认证方式, 所以必须携带auth_type
+    def post(self, request, *args, **kwargs):
+        rest = Rest()
+        try:
+            auth_type = int(request.data.get('auth_type', '') or -1)
+
+            if auth_type not in AUTH_TYPE.keys() or auth_type == 9:
+                rest.set(10301, '绑定失败,参数错误,auth_type未提供或有误')
+                return Response(rest.__dict__)
+
+            self.bind(request, auth_type, rest)
+
+            return Response(rest.__dict__)
+        except Exception as e:
+            rest.set(10399, str(e))
+            return Response(rest.__dict__)
+
+    def bind(self, request, auth_type, rest):
+        if auth_type == 0:
+            rest.set(10302, '绑定失败,本站手机号唯一,无法绑定其他手机号')
+            return
+        password = request.user.password
+        if auth_type == 1:
+            identity = request.data.get('username', '')
+        elif auth_type == 2:
+            identity = request.data.get('email', '')
+        else:
+            identity = request.data.get('open_id', '')
+            password = None
+        if not identity:
+            rest.set(10310+auth_type, f'绑定失败,参数错误,未携带{AUTH_TYPE.get(auth_type)}')
+            return
+        # 创建认证方式, 绑定用户, 绑定失败, 回滚数据库(不会创建认证方式)
+        try:
+            with transaction.atomic():
+                user_auth_obj, created = UserAuthModel.objects.get_or_create(
+                    user=request.user, type=auth_type, identity=identity, password=password
+                )
+                if not created:
+                    rest.set(10320+auth_type, f'绑定失败,{AUTH_TYPE.get(auth_type)}已经存在')
+                    raise RollBackException
+                if auth_type == 1:
+                    # TODO: 向手机发送短信验证码, 验证后进行下一步
+                    pass
+                elif auth_type == 2:
+                    send_active_email(request.user, identity)
+        except RollBackException:
+            return
+        except smtplib.SMTPRecipientsRefused as e:
+            # 我们这里使用的是QQ邮件服务, 所以不存在的qq邮箱会报错, 其他邮箱无法提前判断是否存在
+            rest.set(10303, '邮箱不存在')
+            return
+        # 绑定成功
+        rest.set(10300, '绑定成功', UserProfileSerializer(request.user).data)
+        return
+
+
+class ActiveView(APIView):
+    authentication_classes = []
+
+    def get(self, request, *args, **kwargs):
+        rest = Rest()
+        token = request.query_params.get('token', '')
+        app_key = request.query_params.get('app_key', '')
+        email = request.query_params.get('email', '')
+        if not (token and app_key and email):
+            rest.set(10505, '参数丢失')
+            return Response(rest.__dict__)
+        active_token = cache.get(f'{app_key}_active', '')
+        if not active_token:
+            rest.set(10501, '激活邮件有效期只有5分钟,已失效')
+        elif token != active_token:
+            rest.set(10502, '激活邮件被篡改,无效')
+        elif token == active_token:
+            # 成功激活, 更改is_active属性
+            user_obj = UserProfileModel.objects.filter(app_key=app_key).first()
+            if not user_obj:
+                rest.set(10503, '参数错误, app_key有误')
+            else:
+                UserAuthModel.objects.filter(user_id=user_obj.id, type=2, identity=email).update(is_valid=True)
+                rest.set(10500, '邮箱激活成功')
+        return Response(rest.__dict__)
+
+    def post(self, request, *args, **kwargs):
+        rest = Rest()
+        try:
+            email = request.data.get('email', '')
+            if not email:
+                rest.set(10504, '参数错误, email丢失')
+            send_active_email(request.user, email)
+            rest.set(10510, '邮箱激活成功')
+        except Exception as e:
+            rest.set(10599, str(e))
+        return Response(rest.__dict__)
+
+
+class UnBlindView(APIView):
+    def post(self, request, *args, **kwargs):
+        rest = Rest()
+        # TODO: 解绑邮箱,懒得写了,以后再说
+        return Response(rest.__dict__)
+
+
+class UserView(APIView):
+    def put(self, request, *args, **kwargs):  # 修改用户信息
+        rest = Rest()
+
+        return Response(rest.__dict__)
+
+
 class TestView(APIView):
     def post(self, request, *args, **kwargs):
-        pass
+        return Response('hehe')
+
