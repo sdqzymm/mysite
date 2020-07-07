@@ -310,7 +310,8 @@ class UnBlindView(APIView):
 
 
 class UserView(APIView):
-    def put(self, request, *args, **kwargs):  # 修改用户信息
+    # TODO: 用户信息修改
+    def put(self, request, *args, **kwargs):
         rest = Rest()
 
         return Response(rest.__dict__)

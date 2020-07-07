@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['MYSITE_SECRET_KEY']
+SECRET_KEY = os.environ['MYSITE_SECRET_KEY']  # 需自己配置
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -122,7 +122,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # API设置
-BASE_URL = os.environ['BASE_URL']
+BASE_URL = os.environ['BASE_URL']  # 需自己配置: 本地-> http://127.0.0.1:8000
 
 # 指定用户类
 AUTH_USER_MODEL = 'account.UserProfileModel'
@@ -180,7 +180,7 @@ CACHES = {
     },
 }
 
-# 邮箱配置
+# 邮箱配置: 根据自身情况配置
 EMAIL_HOST = 'smtp.qq.com'  # QQ邮箱服务
 EMAIL_PORT = 25  # 端口,看具体云服务商,阿里云要改465
 EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER'] # 邮箱账号

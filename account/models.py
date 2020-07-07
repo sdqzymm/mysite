@@ -1,4 +1,5 @@
 from functools import wraps
+from hashlib import md5
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser, User, PermissionsMixin
 from django.core import validators
@@ -52,6 +53,7 @@ class UserManager(BaseUserManager):
     def create_user(self, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault('app_key', md5(extra_fields.get('mobile').encode('utf8')).hexdigest())
 
         return self._create_user(password, **extra_fields)
 
@@ -59,6 +61,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('type', 0)
+        extra_fields.setdefault('app_key', md5(extra_fields.get('mobile').encode('utf8')).hexdigest())
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
