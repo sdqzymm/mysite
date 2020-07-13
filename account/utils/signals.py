@@ -19,6 +19,8 @@ def auto_login(sender, auth_type, key, **kwargs):
         sender.last_login = timezone.now()
         sender.save()
         return access_token, refresh_token
+    else:
+        return access_token
 
 
 def refresh(sender, key, **kwargs):

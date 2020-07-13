@@ -19,7 +19,7 @@ class MyAuth(TokenAuthentication):
         # 10221表示账号被冻结, 前台提示用户后跳转解封或登录页面
         # 10231表示本站用户access_token过期,前台跳转刷新token
         # 10232表示三方平台账号使用超过24小时,前台跳转重新登录
-        # 请求头中-> Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a  取到Token xxx
+        # 请求头token格式-> Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
         try:
             auth = get_authorization_header(request).split()
             if not auth:
@@ -36,11 +36,10 @@ class MyAuth(TokenAuthentication):
                 self.rest.set(10203, '无效的token值，token中含有无效的字符')
                 raise AuthenticationFailed
 
-            auth_type = int(request.data.get('auth_type', '') or -1)
+            auth_type = int(request.data.get('auth_type', -1))
             self.app_key = request.data.get('app_key', '')
             self.open_id = request.data.get('open_id', '')
             self.redirect_url = request.get_full_path()
-            print(self.redirect_url)
 
             if auth_type not in AUTH_TYPE or auth_type == 9:
                 self.rest.set(10204, '参数错误, auth_type有误')
@@ -82,7 +81,12 @@ class MyAuth(TokenAuthentication):
         return user_obj, key
 
     def check_token(self, key, rest):
-        token = cache.get(self.app_key if self.is_my_user else self.open_id)
+        try:
+            # redis长时间未读取, redis连接池就会报错关闭连接
+            token = cache.get(self.app_key if self.is_my_user else self.open_id)
+        except Exception as e:
+            print(str(e), type(e))
+            token = cache.get(self.app_key if self.is_my_user else self.open_id)
         if not token:
             rest.set(10208, 'token不存在')
             raise AuthenticationFailed

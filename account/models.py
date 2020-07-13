@@ -39,6 +39,7 @@ def decorate_save(func):
     return wrapper
 
 
+# 自定义用户管理器
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -75,6 +76,7 @@ def upload_avatar(instance, filename):
     return f'avatar/{instance.nickname}-{filename}'
 
 
+# 自定义用户表
 class UserProfileModel(AbstractBaseUser, PermissionsMixin):
     mobile_validator = UnicodeMobileValidator()
     password_validator = UnicodePasswordValidator()
@@ -124,6 +126,7 @@ class UserProfileModel(AbstractBaseUser, PermissionsMixin):
         swappable = 'AUTH_USER_MODEL'
 
 
+# 用户认证表
 class UserAuthModel(models.Model):
     user = models.ForeignKey(to='UserProfileModel', verbose_name='用户', on_delete=models.CASCADE,
                              related_name='auths', help_text='关联用户')

@@ -9,7 +9,11 @@ def set_user_token(access_token, refresh_token, app_key):
         'refresh_token': refresh_token,
         'refresh_expire': int(time.time()) + 3600*24*15
     }
-    cache.set(app_key, token, timeout=None)
+    try:
+        cache.set(app_key, token, timeout=None)
+    except Exception as e:
+        print(str(e), type(e), 'set_user_token')
+        cache.set(app_key, token, timeout=None)
 
 
 def set_others_token(access_token, open_id):
@@ -17,7 +21,11 @@ def set_others_token(access_token, open_id):
         'access_token': access_token,
         'access_expire': int(time.time()) + 3600 * 24,  # 三方平台账号每24小时要重新登录, 前
     }
-    cache.set(open_id, token, timeout=3600*25)  # 失效后及时过期
+    try:
+        cache.set(open_id, token, timeout=3600*25)  # 25小时后直接清除缓存
+    except Exception as e:
+        print(str(e), type(e), 'set_others_token')
+        cache.set(open_id, token, timeout=3600 * 25)
 
 
 def set_refresh_token(access_token, refresh_token, app_key):

@@ -6,14 +6,20 @@ from .settings import MEDIA_URL
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    type_ = serializers.CharField(source='get_type_display', read_only=True)
-    gender_ = serializers.CharField(source='get_gender_display', read_only=True)
+    # type_ = serializers.CharField(source='get_type_display', read_only=True)
+    # gender_ = serializers.CharField(source='get_gender_display', read_only=True)
     avatar_ = serializers.SerializerMethodField(read_only=True)
+    mobile_ = serializers.SerializerMethodField(read_only=True)
 
     def get_avatar_(self, obj):
-        if obj.avatar:
-            return MEDIA_URL + str(obj.avatar)
+        avatar = obj.avatar
+        if avatar:
+            return MEDIA_URL + str(avatar)
         return ''
+
+    def get_mobile_(self, obj):
+        mobile = obj.mobile
+        return f'{mobile[0:3]}******{mobile[-2:]}'
 
     def create(self, validated_data):
         validated_data['nickname'] = validated_data.get('nickname') or f'{validated_data.get("mobile")[:3]}******{validated_data.get("mobile")[-2:]}'
@@ -48,8 +54,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             },
             'created_time': {'read_only': True},
             'last_login': {'read_only': True},
-            'type': {'write_only': True},
-            'gender': {'write_only': True},
+            # 'type': {'write_only': True},
+            # 'gender': {'write_only': True},
             'avatar': {'write_only': True},
             'is_staff': {'write_only': True, 'default': False},
             'is_active': {'default': True},

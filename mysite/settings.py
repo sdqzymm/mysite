@@ -25,7 +25,7 @@ SECRET_KEY = os.environ['MYSITE_SECRET_KEY']  # 需自己配置
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition

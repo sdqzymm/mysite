@@ -1,5 +1,6 @@
 import time
 import smtplib
+import json
 from django.db import transaction
 from django.core.cache import cache
 from rest_framework.views import APIView
@@ -7,9 +8,11 @@ from rest_framework.response import Response
 from .settings import Rest, AUTH_TYPE
 from .serializers import UserProfileSerializer
 from .models import UserAuthModel, UserProfileModel
-from .utils.email import send_active_email
+from .utils.my_email import send_active_email
 from .utils.signals import logged_in, token_refreshed
 from .utils.exceptions import RollBackException, OldRefreshTokenException
+from .utils.aliyun import send_mobile_captcha
+from .utils.utils import get_mobile_captcha, check_mobile_captcha
 
 
 class RegView(APIView):
@@ -18,13 +21,16 @@ class RegView(APIView):
     def post(self, request, *args, **kwargs):
         rest = Rest()
         try:
-            # TODO: 首先短信验证码校验, 需要公司账号对接通信平台, 后续自己注册个公司添加
-            auth_type = int(request.data.get('auth_type') or -1)
+            auth_type = int(request.data.get('auth_type', -1))
             if auth_type not in AUTH_TYPE.keys():
                 rest.set(10002, '注册失败,注册类型不存在')
                 return Response(rest.__dict__)
             if auth_type in [0, 1, 2]:
                 rest.set(1003, '注册失败,本站暂不支持仅用密码注册')
+                return Response(rest.__dict__)
+            # 手机短信验证码校验
+            rest = check_mobile_captcha(request, rest)
+            if rest.code:
                 return Response(rest.__dict__)
             # 创建用户
             ser_obj = UserProfileSerializer(data=request.data)
@@ -69,9 +75,9 @@ class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         rest = Rest()
         try:
-            auth_type = int(request.data.get('auth_type') or -1)
+            auth_type = int(request.data.get('auth_type', -1))
             if auth_type not in AUTH_TYPE.keys() or auth_type == 9:
-                rest.set(10101, '参数错误,type未提供或有误')
+                rest.set(10101, '参数错误,auth_type未提供或有误')
                 return Response(rest.__dict__)
 
             if auth_type not in [0, 1, 2]:
@@ -81,9 +87,9 @@ class LoginView(APIView):
                     rest.set(10102, '参数错误,三方账号登录未携带open_id')
                     return Response(rest.__dict__)
                 # 三方用户登录成功, 缓存token
-                logged_in.send(sender='', auth_type=auth_type, key=open_id)
+                access_token = logged_in.send(sender='', auth_type=auth_type, key=open_id)[0][1]
 
-                rest.set(10110, '登陆成功')
+                rest.set(10110, '登陆成功', {'access_token': access_token})
                 return Response(rest.__dict__)
 
             # 本站注册用户登录
@@ -117,7 +123,7 @@ class LoginView(APIView):
                 return rest, None
             user_auth_obj = UserAuthModel.objects.filter(type=0, identity=mobile).first()
             if user_auth_obj is None:
-                rest.set(10104, '参数错误,手机号不存在')
+                rest.set(10104, '参数错误,手机号未注册')
                 return rest, None
         elif auth_type == 1:
             # 用户名密码登录
@@ -135,16 +141,16 @@ class LoginView(APIView):
                 return rest, None
             user_auth_obj = UserAuthModel.objects.filter(type=0, identity=email).first()
             if user_auth_obj is None:
-                rest.set(10108, '参数错误,邮箱不存在')
+                rest.set(10108, '参数错误,邮箱未绑定')
                 return rest, None
 
         # 校验用户
         user_obj = user_auth_obj.user
         if not user_obj:
-            rest.set(10112, '用户不存在')
+            rest.set(10112, '账号不存在')
             return rest, None
         if not user_obj.is_active:
-            rest.set(10113, '用户被冻结')
+            rest.set(10113, '账号被冻结')
             return rest, None
         # 校验密码:
         if not user_obj.check_password(password):
@@ -206,11 +212,11 @@ class RefreshTokenView(APIView):
         return Response(rest.__dict__)
 
 
-class BlindView(APIView):  # 绑定其实就是添加一种认证方式, 所以必须携带auth_type
+class BlindView(APIView):  # 注册用户绑定其他登录方式,其实就是添加一种认证方式, 所以必须携带auth_type
     def post(self, request, *args, **kwargs):
         rest = Rest()
         try:
-            auth_type = int(request.data.get('auth_type', '') or -1)
+            auth_type = int(request.data.get('auth_type', -1))
 
             if auth_type not in AUTH_TYPE.keys() or auth_type == 9:
                 rest.set(10301, '绑定失败,参数错误,auth_type未提供或有误')
@@ -238,7 +244,7 @@ class BlindView(APIView):  # 绑定其实就是添加一种认证方式, 所以�
         if not identity:
             rest.set(10310+auth_type, f'绑定失败,参数错误,未携带{AUTH_TYPE.get(auth_type)}')
             return
-        # 创建认证方式, 绑定用户, 绑定失败, 回滚数据库(不会创建认证方式)
+        # 创建认证方式, 绑定用户, 绑定失败, 回滚数据库
         try:
             with transaction.atomic():
                 user_auth_obj, created = UserAuthModel.objects.get_or_create(
@@ -255,7 +261,7 @@ class BlindView(APIView):  # 绑定其实就是添加一种认证方式, 所以�
         except RollBackException:
             return
         except smtplib.SMTPRecipientsRefused as e:
-            # 我们这里使用的是QQ邮件服务, 所以不存在的qq邮箱会报错, 其他邮箱无法提前判断是否存在
+            # 这里使用的是QQ邮件服务, 所以不存在的qq邮箱会报错, 其他邮箱无法提前判断是否存在
             rest.set(10303, '邮箱不存在')
             return
         # 绑定成功
@@ -296,7 +302,7 @@ class ActiveView(APIView):
             if not email:
                 rest.set(10504, '参数错误, email丢失')
             send_active_email(request.user, email)
-            rest.set(10510, '邮箱激活成功')
+            rest.set(10510, '邮箱激活邮件发送成功')
         except Exception as e:
             rest.set(10599, str(e))
         return Response(rest.__dict__)
@@ -309,10 +315,39 @@ class UnBlindView(APIView):
         return Response(rest.__dict__)
 
 
-class UserView(APIView):
+class ProfileView(APIView):
     # TODO: 用户信息修改
-    def put(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         rest = Rest()
+
+        return Response(rest.__dict__)
+
+
+class CaptchaView(APIView):
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        rest = Rest()
+        try:
+            mobile = request.data.get('mobile', '')
+            if not mobile:
+                rest.set(10701, '参数缺失,手机号未提供')
+                return Response(rest.__dict__)
+            if UserAuthModel.objects.filter(identity=mobile).exists():
+                rest.set(10703, '手机号已被注册')
+                return Response(rest.__dict__)
+            # 发送短信验证码
+            captcha = get_mobile_captcha()
+            res = json.loads(send_mobile_captcha(mobile, captcha), encoding='utf8')
+            if not res.get('Code', '').lower() == 'ok':
+                rest.set(10702, res.get('Message', ''))
+                return Response(rest.__dict__)
+            # 发送成功, 缓存验证码
+            cache.set(mobile, captcha+mobile, timeout=300)
+            rest.set(10700, '发送验证码成功')
+
+        except Exception as e:
+            rest.set(10799, str(e))
 
         return Response(rest.__dict__)
 
@@ -320,4 +355,7 @@ class UserView(APIView):
 class TestView(APIView):
     def post(self, request, *args, **kwargs):
         return Response('hehe')
+
+
+
 

@@ -9,4 +9,7 @@ urlpatterns = [
     re_path('^test/$', TestView.as_view(), name='test_view'),
     re_path('^blind/$', BlindView.as_view(), name='blind'),
     re_path('^active/$', ActiveView.as_view(), name='active'),
+    re_path('^captcha/$', CaptchaView.as_view(), name='captcha'),
+    re_path('^profile/$', ProfileView.as_view(), name='profile'),
+
 ]
