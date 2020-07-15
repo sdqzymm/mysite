@@ -73,7 +73,7 @@ class UserManager(BaseUserManager):
 
 
 def upload_avatar(instance, filename):
-    return f'avatar/{instance.nickname}-{filename}'
+    return f'avatar/{instance.mobile}-{filename}'
 
 
 # 自定义用户表
@@ -170,4 +170,24 @@ class UserDetailModel(models.Model):
 
     class Meta():
         verbose_name = '用户详情表'
+        verbose_name_plural = verbose_name
+
+
+def upload_photo(instance, filename):
+    return f'photo/{instance.user.mobile}/{filename}'
+
+
+# 用户照片表
+class PhotoModel(models.Model):
+    user = models.ForeignKey('UserProfileModel', on_delete=models.CASCADE, verbose_name='用户',
+                             related_name='photos', help_text='拥有该照片的用户')
+    path = models.ImageField('路径', upload_to=upload_photo, blank=True, null=True, help_text='照片')
+
+    def __str__(self):
+        return str(self.path)
+
+    __repr__ = __str__
+
+    class Meta:
+        verbose_name = '照片表'
         verbose_name_plural = verbose_name

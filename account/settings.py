@@ -1,8 +1,12 @@
-from mysite.settings import MEDIA_URL, Rest, EMAIL_HOST_USER
+# 注: 使用本account应用的功能, 需要在项目settings中配置如下:
+# app中加载本应用
+# AUTH_USER_MODEL: 指定用户类为本应用下的UserProfileModel
+# MEDIA相关: MEDIA_ROOT MEDIA_URL
+# 项目url配置media路由: from django.views.static import serve  re_path(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT}),
+# Rest: 自定义消息返回-> code; msg; data; set方法
+# 邮箱配置:  协议,端口,账号,授权码等
 
-# MEDIA_URL: media文件访问根路径 http: xxx/media/
-# Rest: 自定义消息返回-> code; msg; data
-# EMAIL_HOST_USER:  邮件发送账号
+from mysite.settings import MEDIA_ROOT, MEDIA_URL, Rest, EMAIL_HOST_USER
 
 # 本站用户注册需要提供手机号,密码,并且通过手机短信验证码校验
 AUTH_TYPE = {  # 备注了不同类型的权限

@@ -1,13 +1,14 @@
 import time
 import smtplib
 import json
+import os
 from django.db import transaction
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .settings import Rest, AUTH_TYPE
+from .settings import Rest, AUTH_TYPE, MEDIA_ROOT, MEDIA_URL
 from .serializers import UserProfileSerializer
-from .models import UserAuthModel, UserProfileModel
+from .models import UserAuthModel, UserProfileModel, PhotoModel
 from .utils.my_email import send_active_email
 from .utils.signals import logged_in, token_refreshed
 from .utils.exceptions import RollBackException, OldRefreshTokenException
@@ -319,8 +320,38 @@ class ProfileView(APIView):
     # TODO: 用户信息修改
     def post(self, request, *args, **kwargs):
         rest = Rest()
+        print(request.data)
+        return Response(rest.__dict__)
+
+
+class PhotoView(APIView):
+    # 上传照片
+    def post(self, request, *args, **kwargs):
+        rest = Rest()
+        try:
+            # 注意先删除文件夹下的图片(毕竟服务器容量小,还是要删掉)
+            photo_queryset = PhotoModel.objects.filter(user=request.user).all()
+            for photo in photo_queryset:
+                image_path = os.path.join(MEDIA_ROOT, str(photo.path))
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+            PhotoModel.objects.filter(user=request.user).delete()
+
+            photo_list = []
+            for key, path in request.data.items():  # 这里要排除auth_type, app_key
+                if 'picture' in key:
+                    photo_list.append(PhotoModel(user=request.user, path=path))
+            photos = PhotoModel.objects.bulk_create(photo_list)
+
+            data = [{'image': MEDIA_URL + str(photo)} for photo in photos]
+
+            rest.set(10620, '上传照片成功', data)
+
+        except Exception as e:
+            rest.set(10629, str(e))
 
         return Response(rest.__dict__)
+
 
 
 class CaptchaView(APIView):
