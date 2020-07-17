@@ -6,7 +6,7 @@ from django.db import transaction
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .settings import Rest, AUTH_TYPE, MEDIA_ROOT, MEDIA_URL
+from .settings import Rest, AUTH_TYPE, MEDIA_ROOT
 from .serializers import *
 from .models import UserAuthModel, UserProfileModel, PhotoModel
 from .utils.my_email import send_active_email

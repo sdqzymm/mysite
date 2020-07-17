@@ -1,5 +1,6 @@
 import requests
-import datetime
+from django.utils import timezone
+
 from ..settings import VIDEO_COLLECT_SIZE
 
 headers = {
@@ -7,8 +8,8 @@ headers = {
     }
 
 
-def collect_video():
-    url = f'https://www.dance365.com/apis/moment/moments/cursor/rec/default?access_token=c494ae44-3adc-48ca-8749-5128a53358d7&pageSize={VIDEO_COLLECT_SIZE}&column=lastest'
+def collect_video(size=None):
+    url = f'https://www.dance365.com/apis/moment/moments/cursor/rec/default?access_token=c494ae44-3adc-48ca-8749-5128a53358d7&pageSize={size or VIDEO_COLLECT_SIZE}&column=lastest'
     res = requests.get(url, headers=headers)
     video_info_list = res.json().get('content')
 
@@ -23,7 +24,7 @@ def collect_video():
             my_video_info.setdefault('m3u8', video_info.get('moreBackup').get('videos')[0].get('hlsUrl'))
             my_video_info.setdefault('author_name', video_info.get('creatorBackup').get('name'))
             my_video_info.setdefault('author_avatar', video_info.get('creatorBackup').get('avatar'))
-            my_video_info.setdefault('posted_time', datetime.datetime.fromtimestamp(float(video_info.get('createTime')) / 1000))
+            my_video_info.setdefault('posted_time', timezone.datetime.fromtimestamp(float(video_info.get('createTime')) / 1000))
             my_video_info.setdefault('posted_by', '中舞网')
             my_video_info.setdefault('tags', [item.get('name') for item in video_info.get('avocationTags')])
             my_video_info_list.append(my_video_info)
