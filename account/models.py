@@ -181,13 +181,15 @@ def upload_photo(instance, filename):
 class PhotoModel(models.Model):
     user = models.ForeignKey('UserProfileModel', on_delete=models.CASCADE, verbose_name='用户',
                              related_name='photos', help_text='拥有该照片的用户')
-    path = models.ImageField('路径', upload_to=upload_photo, blank=True, null=True, help_text='照片')
+    photo = models.ImageField('照片', upload_to=upload_photo, blank=True, null=True, help_text='照片')
+    index = models.IntegerField('索引值', default=0, help_text='表示该照片在用户照片墙上的顺序,0,1,2...')
 
     def __str__(self):
-        return str(self.path)
+        return str(self.photo)
 
     __repr__ = __str__
 
     class Meta:
         verbose_name = '照片表'
         verbose_name_plural = verbose_name
+        unique_together = (('photo', 'index'), )

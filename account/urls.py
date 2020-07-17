@@ -11,8 +11,5 @@ urlpatterns = [
     re_path('^captcha/$', CaptchaView.as_view(), name='captcha'),
     re_path('^profile/$', ProfileView.as_view(), name='profile'),
     re_path('^photo/$', PhotoView.as_view(), name='photo'),
-
-
-
-    re_path('^test/$', TestView.as_view(), name='test_view'),
+    re_path('^blank/$', BlankView.as_view(), name='test_view'),
 ]

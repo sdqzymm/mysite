@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
+    'dancing.apps.DancingConfig',
     'rest_framework',
 ]
 

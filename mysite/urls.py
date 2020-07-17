@@ -24,6 +24,9 @@ urlpatterns = [
     # 账号相关路由配置
     re_path('^api/account/((?P<version>[v1|2]+)/)?', include(('account.urls', 'account'), namespace='account')),
 
+    # 舞蹈相关路由配置
+    re_path('^api/dancing/((?P<version>[v1|2]+)/)?', include(('dancing.urls', 'dancing'), namespace='dancing')),
+
     # media路径配置
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT}),
 ]

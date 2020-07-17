@@ -7,7 +7,7 @@ from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .settings import Rest, AUTH_TYPE, MEDIA_ROOT, MEDIA_URL
-from .serializers import UserProfileSerializer
+from .serializers import *
 from .models import UserAuthModel, UserProfileModel, PhotoModel
 from .utils.my_email import send_active_email
 from .utils.signals import logged_in, token_refreshed
@@ -320,30 +320,62 @@ class ProfileView(APIView):
     # TODO: 用户信息修改
     def post(self, request, *args, **kwargs):
         rest = Rest()
-        print(request.data)
+        if not UserDetailModel.objects.filter(user=request.user).exists():
+            UserDetailModel.objects.create(user=request.user)
+        ser_obj = EditProfileSerializer(instance=request.user, data=request.data)
+
+        if not ser_obj.is_valid():
+            rest.set(10601, '修改失败,用户信息校验失败', ser_obj.errors)
+        else:
+            ser_obj.save()
+            rest.set(10600, '用户信息修改成功', UserProfileSerializer(instance=request.user).data)
         return Response(rest.__dict__)
 
 
 class PhotoView(APIView):
-    # 上传照片
+    # 一次性上传多张照片
+    # def post(self, request, *args, **kwargs):
+    #     rest = Rest()
+    #     try:
+    #         # 注意先删除文件夹下的图片(毕竟服务器容量小,还是要删掉)
+    #         photo_queryset = PhotoModel.objects.filter(user=request.user).all()
+    #         for photo in photo_queryset:
+    #             image_path = os.path.join(MEDIA_ROOT, str(photo.path))
+    #             if os.path.exists(image_path):
+    #                 os.remove(image_path)
+    #         PhotoModel.objects.filter(user=request.user).delete()
+    #
+    #         photo_list = []
+    #         for key, photo in request.data.items():  # 这里要排除auth_type, app_key
+    #             if 'picture' in key:
+    #                 photo_list.append(PhotoModel(user=request.user, photo=photo))
+    #         photos = PhotoModel.objects.bulk_create(photo_list)
+    #
+    #         data = [{'image': MEDIA_URL + str(photo)} for photo in photos]
+    #
+    #         rest.set(10620, '上传照片成功', data)
+    #
+    #     except Exception as e:
+    #         rest.set(10629, str(e))
+    #
+    #     return Response(rest.__dict__)
+
+    # 上传单张照片
     def post(self, request, *args, **kwargs):
+        # 兼容小程序只能单张图片上传(如果用户照片墙放4张照片,那么会连续接到4次上传请求
         rest = Rest()
+        photo = request.data.get('photo', '')
+        index = request.data.get('index', '')
         try:
-            # 注意先删除文件夹下的图片(毕竟服务器容量小,还是要删掉)
-            photo_queryset = PhotoModel.objects.filter(user=request.user).all()
-            for photo in photo_queryset:
-                image_path = os.path.join(MEDIA_ROOT, str(photo.path))
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-            PhotoModel.objects.filter(user=request.user).delete()
-
-            photo_list = []
-            for key, path in request.data.items():  # 这里要排除auth_type, app_key
-                if 'picture' in key:
-                    photo_list.append(PhotoModel(user=request.user, path=path))
-            photos = PhotoModel.objects.bulk_create(photo_list)
-
-            data = [{'image': MEDIA_URL + str(photo)} for photo in photos]
+            # 第一次请求,会删除所有的原照片(毕竟服务器容量小,还是要删掉)
+            photo_obj = PhotoModel.objects.filter(user=request.user, index=index).first()
+            if photo_obj:
+                photo_path = os.path.join(MEDIA_ROOT, str(photo_obj))
+                os.remove(photo_path)
+                PhotoModel.objects.filter(user=request.user).delete()
+            # 创建照片
+            new_photo = PhotoModel.objects.create(user=request.user, photo=photo, index=index)
+            data = {'image': MEDIA_URL + str(new_photo), 'index': index}
 
             rest.set(10620, '上传照片成功', data)
 
@@ -351,7 +383,6 @@ class PhotoView(APIView):
             rest.set(10629, str(e))
 
         return Response(rest.__dict__)
-
 
 
 class CaptchaView(APIView):
@@ -383,9 +414,11 @@ class CaptchaView(APIView):
         return Response(rest.__dict__)
 
 
-class TestView(APIView):
+class BlankView(APIView):
     def post(self, request, *args, **kwargs):
-        return Response('hehe')
+        rest = Rest()
+        rest.set(10800, '空请求')
+        return Response(rest.__dict__)
 
 
 
