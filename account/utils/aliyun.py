@@ -26,4 +26,6 @@ def send_mobile_captcha(mobile, code):
     request.add_query_param('TemplateParam', {'code': code})
     response = client.do_action_with_exception(request)
 
+    print(f'{mobile}获取了验证码')
+
     return str(response, encoding='utf-8')

@@ -22,9 +22,10 @@ class MyAuth(TokenAuthentication):
         # 请求头token格式-> Authorization: Token 401f7ac837da42b97f613d789819ff93537bee6a
         try:
             auth = get_authorization_header(request).split()
-            if not auth:
-                self.rest.set(10201, '请求头未携带token令牌')
-                raise AuthenticationFailed
+            auth_type = int(request.data.get('auth_type', -1))
+            if not auth or auth_type == -1:
+                # 表示游客
+                return None
 
             if len(auth) != 2 or auth[0].lower() != self.keyword.lower().encode():
                 self.rest.set(10202, '无效的token令牌，请求头携带token格式不正确')
@@ -36,7 +37,6 @@ class MyAuth(TokenAuthentication):
                 self.rest.set(10203, '无效的token值，token中含有无效的字符')
                 raise AuthenticationFailed
 
-            auth_type = int(request.data.get('auth_type', -1))
             self.app_key = request.data.get('app_key', '')
             self.open_id = request.data.get('open_id', '')
             self.redirect_url = request.get_full_path()

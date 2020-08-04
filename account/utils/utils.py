@@ -13,7 +13,5 @@ def check_mobile_captcha(request, rest):
     captcha_cache = cache.get(mobile)
     if not captcha_cache:
         rest.set(10007, '验证码失效')
-        return rest
-    if captcha + mobile != cache.get(mobile):
+    if captcha + mobile != captcha_cache:
         rest.set(10006, '验证码错误')
-        return rest

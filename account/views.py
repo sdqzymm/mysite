@@ -6,7 +6,7 @@ from django.db import transaction
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .settings import Rest, AUTH_TYPE, MEDIA_ROOT, MEDIA_URL
+from .settings import Rest, AUTH_TYPE, MEDIA_ROOT
 from .serializers import *
 from .models import UserAuthModel, UserProfileModel, PhotoModel
 from .utils.my_email import send_active_email
@@ -30,7 +30,7 @@ class RegView(APIView):
                 rest.set(1003, '注册失败,本站暂不支持仅用密码注册')
                 return Response(rest.__dict__)
             # 手机短信验证码校验
-            rest = check_mobile_captcha(request, rest)
+            check_mobile_captcha(request, rest)
             if rest.code:
                 return Response(rest.__dict__)
             # 创建用户
@@ -317,7 +317,6 @@ class UnBlindView(APIView):
 
 
 class ProfileView(APIView):
-    # TODO: 用户信息修改
     def post(self, request, *args, **kwargs):
         rest = Rest()
         if not UserDetailModel.objects.filter(user=request.user).exists():
@@ -402,7 +401,7 @@ class CaptchaView(APIView):
             captcha = get_mobile_captcha()
             res = json.loads(send_mobile_captcha(mobile, captcha), encoding='utf8')
             if not res.get('Code', '').lower() == 'ok':
-                rest.set(10702, res.get('Message', ''))
+                rest.set(10702, res.get('Message', '')+' 短信接口无法调用,请联系系统管理员让他交钱')
                 return Response(rest.__dict__)
             # 发送成功, 缓存验证码
             cache.set(mobile, captcha+mobile, timeout=300)
@@ -419,7 +418,3 @@ class BlankView(APIView):
         rest = Rest()
         rest.set(10800, '空请求')
         return Response(rest.__dict__)
-
-
-
-

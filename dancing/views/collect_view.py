@@ -7,8 +7,9 @@ from django.db import transaction
 
 
 class CollectVideo(View):
-    def get(self, request):
-        video_list = collect_video()
+    def get(self, request, *args, **kwargs):
+        size = request.GET.get('size')
+        video_list = collect_video(size)
         # # 批量插入
         # obj_list = [DancingVideo(**video) for video in video_list
         #             if not DancingVideo.objects.filter(title=video['title']).exists()]
@@ -37,7 +38,7 @@ class CollectVideo(View):
 
 
 class CollectTag(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         tag_list = collect_tag()
         obj_list = [DancingTag(**tag) for tag in tag_list
                     if not DancingTag.objects.filter(title=tag.get('title')).exists()]
@@ -50,6 +51,7 @@ class CollectTag(View):
 
 
 def get_category(tags):
+    # 根据tags自动选择一个category给舞蹈视频(tags去匹配以下列表)
     category_list = ['中国', '芭蕾', '现代', '时尚', '爵士', '拉丁', '街舞',
                      '摩登', '抖音', '热舞', '踢踏', '民族', '民间', '古典',
                      '肚皮舞', '伦巴', '桑巴', '恰恰', '斗牛', '牛仔',
