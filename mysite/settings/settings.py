@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Quick-start development settings - unsuitable for production
@@ -21,12 +21,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['MYSITE_SECRET_KEY']  # 需自己配置
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -73,18 +67,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -124,7 +106,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # API设置
-BASE_URL = os.environ['BASE_URL']  # 需自己配置: 本地-> http://127.0.0.1:8000
+BASE_URL = os.environ['BASE_URL']  # 服务器ip: 本地-> http://127.0.0.1:8000
 
 # 指定用户类
 AUTH_USER_MODEL = 'account.UserProfileModel'
@@ -165,7 +147,6 @@ REST_FRAMEWORK = {
     },
 }
 
-
 # redis缓存
 CACHES = {
     'default': {
@@ -184,9 +165,7 @@ CACHES = {
 
 # 邮箱配置: 根据自身情况配置
 EMAIL_HOST = 'smtp.qq.com'  # QQ邮箱服务
-EMAIL_PORT = 25  # 端口,看具体云服务商,阿里云要改465
 EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER'] # 邮箱账号
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD'] # 邮箱授权码
-EMAIL_USE_TLS = True
+EMAIL_SUBJECT_PREFIX = ''
 EMAIL_FROM = '幻云风' # 对方看到的名称(没有鸟用啊..)
-

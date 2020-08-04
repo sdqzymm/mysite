@@ -1,1 +1,1 @@
-from mysite.settings import Rest
+from mysite.settings.settings import Rest

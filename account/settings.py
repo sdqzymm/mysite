@@ -6,7 +6,7 @@
 # Rest: 自定义消息返回-> code; msg; data; set方法
 # 邮箱配置:  协议,端口,账号,授权码等
 
-from mysite.settings import MEDIA_ROOT, MEDIA_URL, Rest, EMAIL_HOST_USER
+from mysite.settings.settings import MEDIA_ROOT, MEDIA_URL, Rest, EMAIL_HOST_USER
 
 # 本站用户注册需要提供手机号,密码,并且通过手机短信验证码校验
 AUTH_TYPE = {  # 备注了不同类型的权限

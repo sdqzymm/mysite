@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.static import serve
-from .settings import MEDIA_ROOT
+from .settings.settings import MEDIA_ROOT
 
 urlpatterns = [
     path('admin/', admin.site.urls),

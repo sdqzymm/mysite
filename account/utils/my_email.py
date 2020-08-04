@@ -13,6 +13,3 @@ def send_active_email(user, email):
         '邮箱激活', '', EMAIL_HOST_USER, [email], fail_silently=False,
         html_message=html_message
     )
-
-
-

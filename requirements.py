@@ -1,0 +1,16 @@
+aliyun-python-sdk-core-v3==2.13.11
+asgiref==3.2.10
+certifi==2020.6.20
+chardet==3.0.4
+Django==3.0.7
+django-redis==4.12.1
+djangorestframework==3.11.0
+idna==2.10
+jmespath==0.10.0
+mysqlclient==1.4.6
+Pillow==7.1.2
+pytz==2020.1
+redis==3.5.3
+requests==2.24.0
+sqlparse==0.3.1
+urllib3==1.25.9
