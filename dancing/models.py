@@ -1,5 +1,7 @@
 from django.db import models
 from account.models import UserProfileModel
+from django.contrib.contenttypes.fields import GenericRelation
+from comment.models import CommentModel
 
 
 class Category(models.Model):
@@ -55,7 +57,8 @@ class DancingVideo(models.Model):
     posted_time = models.DateTimeField('发表时间', null=True, blank=True)
     posted_by = models.CharField('转载自', default='中舞网', max_length=32)
     play_num = models.IntegerField('播放次数', default=0)
-    # 后续可以添加: 播放数 点赞数 评论-> 评论表 这些高频字段可以做redis缓存
+    # 后续可以添加: 播放数 点赞数 评论-> 评论表
+    comments = GenericRelation(CommentModel)
 
     class Meta:
         verbose_name = '视频表'

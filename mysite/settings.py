@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
     'dancing.apps.DancingConfig',
+    'comment.apps.CommentConfig',
     'rest_framework',
 ]
 
@@ -161,7 +162,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [],
     'DEFAULT_THROTTLE_RATES': {  # 默认频率
         'rate': '15/m'    # scope
-    }
+    },
 }
 
 

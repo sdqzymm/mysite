@@ -1,0 +1,1 @@
+from mysite.settings import Rest

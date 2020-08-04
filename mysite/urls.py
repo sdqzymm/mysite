@@ -27,6 +27,9 @@ urlpatterns = [
     # 舞蹈相关路由配置
     re_path('^api/dancing/((?P<version>[v1|2]+)/)?', include(('dancing.urls', 'dancing'), namespace='dancing')),
 
+    # 评论下你管路由配置
+    re_path('^api/comment/((?P<version>[v1|2]+)/)?', include(('comment.urls', 'comment'), namespace='comment')),
+
     # media路径配置
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT}),
 ]

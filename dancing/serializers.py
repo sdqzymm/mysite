@@ -1,3 +1,5 @@
+import time
+from django.utils import timezone
 from rest_framework import serializers
 from .models import *
 
@@ -7,7 +9,8 @@ class VideoSerializer(serializers.ModelSerializer):
     category_info = serializers.SerializerMethodField(read_only=True)
     user_info = serializers.SerializerMethodField(read_only=True)
     tags_info = serializers.SerializerMethodField(read_only=True)
-    # datetime = serializers.SerializerMethodField(read_only=True)
+    datetime = serializers.SerializerMethodField(read_only=True)
+    timestamp = serializers.SerializerMethodField(read_only=True)
 
     def get_category_info(self, obj):
         category_obj = obj.category
@@ -32,10 +35,15 @@ class VideoSerializer(serializers.ModelSerializer):
             'title': tag.title
         } for tag in tags_queryset]
 
-    # def get_datetime(self, obj):
-    #     time = obj.posted_time
-    #     time = str(time).split('.')[0]
-    #     return time
+    def get_datetime(self, obj):
+        t = obj.posted_time + timezone.timedelta(hours=8)
+        t = str(t).split('.')[0]
+        return t
+
+    def get_timestamp(self, obj):
+        t = obj.posted_time + timezone.timedelta(hours=8)
+        t = time.mktime(t.timetuple())
+        return t
 
     class Meta:
         model = DancingVideo
@@ -44,10 +52,10 @@ class VideoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'category': {'write_only': True},
             'user': {'write_only': True},
-            # 'posted_time': {'write_only': True},
+            'posted_time': {'write_only': True},
             'tags': {'write_only': True, 'validators': []},
         }
-    # ------------下面仅作用法实例---------------
+
     # 定义局部钩子  校验单个字段
     def validate_title(self, value):
         # value就是title字段的值
@@ -59,7 +67,7 @@ class VideoSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # attrs: 字典,包含了所有传过来的字段
         if not attrs.get('title'):
-            attrs['title'] = '未知'
+            attrs['title'] = '无题'
             return attrs
 
 

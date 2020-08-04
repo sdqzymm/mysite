@@ -26,7 +26,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return f'{mobile[0:3]}******{mobile[-2:]}'
 
     def get_photoList(self, obj):
-        return [{'image': MEDIA_URL + str(photo)} for photo in obj.photos.order_by('index')]
+        return [{'image': MEDIA_URL + str(photo)} for photo in obj.photos.order_by('index')] or None
 
     def create(self, validated_data):
         validated_data['nickname'] = validated_data.get('nickname') or f'{validated_data.get("mobile")[:3]}******{validated_data.get("mobile")[-2:]}'
