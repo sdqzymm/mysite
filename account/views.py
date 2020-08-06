@@ -4,6 +4,7 @@ import json
 import os
 from django.db import transaction
 from django.core.cache import cache
+from django.contrib.auth.hashers import check_password
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .settings import Rest, AUTH_TYPE, MEDIA_ROOT
@@ -154,7 +155,9 @@ class LoginView(APIView):
             rest.set(10113, '账号被冻结')
             return rest, None
         # 校验密码:
-        if not user_obj.check_password(password):
+        print(password)
+        print(user_obj.password)
+        if not check_password(password, user_obj.password):
             rest.set(10111, '参数错误,密码错误')
             return rest, None
         return rest, user_obj

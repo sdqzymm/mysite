@@ -6,8 +6,6 @@ from .settings import MEDIA_URL
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    # type_ = serializers.CharField(source='get_type_display', read_only=True)
-    # gender_ = serializers.CharField(source='get_gender_display', read_only=True)
     avatar_ = serializers.SerializerMethodField(read_only=True)
     mobile_ = serializers.SerializerMethodField(read_only=True)
     photoList = serializers.SerializerMethodField(read_only=True)
@@ -30,12 +28,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['nickname'] = validated_data.get('nickname') or f'{validated_data.get("mobile")[:3]}******{validated_data.get("mobile")[-2:]}'
+        print(validated_data.get('password', 'hehe'))
         validated_data['password'] = make_password(validated_data.get('password'))
         validated_data['app_key'] = md5(validated_data['mobile'].encode('utf8')).hexdigest()
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data['password'] = instance.set_password(validated_data.get('password'))
+        if validated_data.get('password'):
+            validated_data['password'] = instance.set_password(validated_data.get('password'))
         return super().update(instance, validated_data)
 
     def validate(self, attrs):

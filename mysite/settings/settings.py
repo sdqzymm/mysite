@@ -91,7 +91,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'Asia/shanghai'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -106,7 +106,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # API设置
-BASE_URL = os.environ['BASE_URL']  # 服务器ip: 本地-> http://127.0.0.1:8000
+BASE_URL = os.environ['BASE_URL']  # 服务器ip: 本地-> http://127.0.0.1
 
 # 指定用户类
 AUTH_USER_MODEL = 'account.UserProfileModel'

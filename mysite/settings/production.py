@@ -13,7 +13,7 @@ DATABASES = {
         'NAME': 'mysite',
         'HOST': os.environ["TENCENT_YUN_IP"],
         'POST': 3306,
-        'USER': 'root',
+        'USER': 'sdqzymm',
         'PASSWORD': os.environ['PASSWORD'],
     }
 }
@@ -36,7 +36,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/data/logs/mysite.log',
+            'filename': 'mysite.log',
         },
         'mail_admins': {
             'level': 'ERROR',
