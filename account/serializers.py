@@ -28,7 +28,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['nickname'] = validated_data.get('nickname') or f'{validated_data.get("mobile")[:3]}******{validated_data.get("mobile")[-2:]}'
-        print(validated_data.get('password', 'hehe'))
         validated_data['password'] = make_password(validated_data.get('password'))
         validated_data['app_key'] = md5(validated_data['mobile'].encode('utf8')).hexdigest()
         return super().create(validated_data)

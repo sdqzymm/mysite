@@ -155,8 +155,6 @@ class LoginView(APIView):
             rest.set(10113, '账号被冻结')
             return rest, None
         # 校验密码:
-        print(password)
-        print(user_obj.password)
         if not check_password(password, user_obj.password):
             rest.set(10111, '参数错误,密码错误')
             return rest, None

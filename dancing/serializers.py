@@ -1,5 +1,6 @@
 import time
 from django.utils import timezone
+from django.core.cache import cache
 from rest_framework import serializers
 from .models import *
 
@@ -11,6 +12,7 @@ class VideoSerializer(serializers.ModelSerializer):
     tags_info = serializers.SerializerMethodField(read_only=True)
     datetime = serializers.SerializerMethodField(read_only=True)
     timestamp = serializers.SerializerMethodField(read_only=True)
+    play_num = serializers.SerializerMethodField(read_only=True)
 
     def get_category_info(self, obj):
         category_obj = obj.category
@@ -44,6 +46,15 @@ class VideoSerializer(serializers.ModelSerializer):
         t = obj.posted_time + timezone.timedelta(hours=8)
         t = time.mktime(t.timetuple())
         return t
+
+    def get_play_num(self, obj):
+        # 先从缓存中读取
+        key = f'play_{obj.id}'
+        play_num = cache.get(key)
+        # 缓存未命中,读取数据库
+        if not play_num:
+            play_num = DancingVideo.objects.filter(pk=obj.id).first().play_num
+        return play_num
 
     class Meta:
         model = DancingVideo

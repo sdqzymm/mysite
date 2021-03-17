@@ -85,7 +85,6 @@ class MyAuth(TokenAuthentication):
             # redis长时间未读取, redis连接池就会报错关闭连接
             token = cache.get(self.app_key if self.is_my_user else self.open_id)
         except Exception as e:
-            print(str(e), type(e))
             token = cache.get(self.app_key if self.is_my_user else self.open_id)
         if not token:
             rest.set(10208, 'token不存在')

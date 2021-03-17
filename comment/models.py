@@ -6,7 +6,8 @@ from account.models import UserProfileModel
 
 class CommentModel(models.Model):
     content = models.TextField('评论内容', help_text='评论内容')
-    p_comment = models.ForeignKey(to='self', verbose_name='父评论', on_delete=models.CASCADE, null=True, blank=True)
+    p_comment = models.ForeignKey(to='self', verbose_name='父评论', on_delete=models.CASCADE, null=True, blank=True,
+                                  related_name='children_comments')
     user = models.ForeignKey(to=UserProfileModel, verbose_name='评论用户', on_delete=models.CASCADE,
                              help_text='评论用户', related_name='posted_comments')
     to = models.ForeignKey(to=UserProfileModel, verbose_name='回复用户', on_delete=models.DO_NOTHING, null=True, blank=True,

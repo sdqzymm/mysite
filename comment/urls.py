@@ -3,4 +3,5 @@ from .views import *
 
 urlpatterns = [
     re_path(r'comment/$', CommentView.as_view()),
+    re_path(r'test/$', TestView.as_view()),
 ]

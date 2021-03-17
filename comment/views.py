@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import HttpResponse
 from .settings import Rest
 from .serializers import CommentSerializer
 from .models import CommentModel
@@ -18,7 +19,11 @@ class CommentView(APIView):
             request.data['content_type'] = content_type_obj.id
             ser_obj = CommentSerializer(data=request.data)
             if ser_obj.is_valid():
-                ser_obj.save()
+                comment_obj = ser_obj.save()
+                # 评论数+1
+                obj = comment_obj.content_object
+                obj.comment_num += 1
+                obj.save()
                 rest.set(30100, '评论成功')
             else:
                 rest.set(30101, '评论失败,参数校验失败', ser_obj.errors)
@@ -60,7 +65,12 @@ class CommentView(APIView):
         try:
             user_id = request.data.get('user', ''),
             time = request.data.get('time', '')
-            if CommentModel.objects.filter(user_id=user_id, time=time).exists():
+            comment_obj = CommentModel.objects.filter(user_id=user_id, time=time).first()
+            if comment_obj:
+                # 评论数相应修改
+                obj = comment_obj.content_object
+                obj.comment_num -= comment_obj.children_comments.count() + 1
+                obj.save()
                 CommentModel.objects.filter(user_id=user_id, time=time).delete()
                 rest.set(30200, '评论删除成功')
             else:
@@ -68,3 +78,14 @@ class CommentView(APIView):
         except Exception as e:
             rest.set(30299, str(e))
         return Response(rest.__dict__)
+
+import json
+class TestView(APIView):
+    def get(self, request, *args, **kwargs):
+        data = {
+            'name': 'sd',
+            'age': 18
+        }
+        data = json.dumps(data)
+        print(f'handler({data})')
+        return HttpResponse(f'handler({data})', 'application/javascript')

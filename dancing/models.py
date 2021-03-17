@@ -57,6 +57,9 @@ class DancingVideo(models.Model):
     posted_time = models.DateTimeField('发表时间', null=True, blank=True)
     posted_by = models.CharField('转载自', default='中舞网', max_length=32)
     play_num = models.IntegerField('播放次数', default=0)
+    like_num = models.IntegerField('点赞次数', default=0)
+    collect_num = models.IntegerField('收藏次数', default=0)
+    comment_num = models.IntegerField('评论次数', default=0)
     # 后续可以添加: 播放数 点赞数 评论-> 评论表
     comments = GenericRelation(CommentModel)
 
@@ -70,3 +73,4 @@ class DancingVideo(models.Model):
         return self.title
 
     __str__ = __repr__
+

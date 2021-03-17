@@ -27,7 +27,7 @@ class UnicodePasswordValidator(validators.RegexValidator):
     message = '至少6个字符，可以使用字母、数字或下划线，不能以下划线开头，不能全部是下划线'
 
 
-# 给用户表save方法自定义装饰器, save后自从生成手机号密码认证表并绑定用户
+# 给用户表save方法自定义装饰器, save后自动生成手机号密码认证表并绑定用户
 def decorate_save(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
